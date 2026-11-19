@@ -186,3 +186,12 @@ result above. More detail is in my written reflection.
 - Cormen, Leiserson, Rivest, Stein, *Introduction to Algorithms* (3rd ed.), Section 16.3 "Huffman codes". Proof that the greedy choice is optimal.
 - [Python `heapq` docs](https://docs.python.org/3/library/heapq.html) and [`zlib` docs](https://docs.python.org/3/library/zlib.html)
 - Claude (Anthropic) and NotebookLM (Google). AI tools I used for learning, see the reflection.
+
+### Slide images (all from Wikimedia Commons)
+
+- Huffman tree for "to be or not to be", huffman.ooz.ie, CC0 (I recolored it for the dark slides)
+- Great Dome, MIT (IMG 8390), Daderot, public domain
+- Morse telegraph key at Tekniska museet (DSC01644), Daderot, CC0
+- 5- and 8-hole paper tapes, TedColes, public domain
+- 8", 5.25" and 3.5" floppy disk drives, Michael Holley, public domain
+- Slide template: "Mastering Code" by Slidesgo
