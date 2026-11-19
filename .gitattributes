@@ -1,0 +1,4 @@
+# keep example files byte-for-byte the same on every OS (sizes in the README depend on it)
+examples/* -text
+*.c text eol=lf
+Makefile text eol=lf

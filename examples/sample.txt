@@ -1,0 +1,42 @@
+This is a sample of ordinary English text that I use to test my Huffman coding program.
+It does not need to say anything important. It just needs to look like normal writing,
+with common letters like e, t, a and o showing up a lot, and letters like z, q and x
+showing up almost never. That difference is the whole reason Huffman coding works.
+
+When you save a text file, every character usually takes one byte, which is eight bits.
+The letter e and the letter z cost exactly the same amount of space, even though e shows
+up dozens of times more often. Huffman coding fixes that by giving the common characters
+short codes and the rare characters longer codes. On average, the file gets smaller.
+
+The way the codes are picked is surprisingly simple. First you count how many times each
+character appears. Then you take the two least common characters and join them together
+under a new node whose count is the sum of the two. You keep doing that, always joining
+the two smallest things you have left, until everything is joined into a single tree.
+Going left in the tree means a zero and going right means a one, and the path from the
+top of the tree down to a character is that character's code.
+
+Because every character sits at the end of a branch, no code can be the start of another
+code. That means you can read the bits one at a time and know exactly when a character
+ends, without needing any spaces or separators between them. You start at the top of the
+tree, follow the bits down, write out the character when you reach the bottom, and then
+jump back up to the top and keep going.
+
+There are a few catches. The person decoding the file needs to know the codes, so the
+compressed file has to carry a small table in front of the data. For a very short file,
+that table can be bigger than the savings, and the "compressed" file ends up larger than
+the original. Random data is even worse, because every byte shows up about equally often,
+so there is nothing to take advantage of. That is also why zipping a file that is already
+zipped does not make it any smaller.
+
+Huffman coding was invented by David Huffman in 1951 while he was a graduate student.
+His professor let the class skip the final exam if they could write a paper on finding
+the most efficient binary code. He almost gave up, but then came up with the idea of
+building the tree from the bottom up. Today it is still used inside zip files, gzip,
+PNG images, JPEG photos, MP3 audio and even the headers of web requests.
+
+I picked this topic because it connects a lot of things from COMP 211. There are bits and
+bytes, bitwise operators for packing the codes into bytes, structs and pointers for the
+tree, malloc and free for creating and cleaning up the nodes, and a priority queue to
+keep finding the two smallest counts. It is a small program, but it touches almost
+everything we covered this semester, and the result is something you can actually see:
+a file that really does get smaller on disk.

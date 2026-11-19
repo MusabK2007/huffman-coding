@@ -1,0 +1,6 @@
+huffman
+*.huf
+*.out
+examples/random.bin
+__pycache__/
+.DS_Store
