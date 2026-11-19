@@ -162,7 +162,7 @@ slides/                presentation slides
 
 ## Slides
 
-[slides/huffman-slides.pdf](slides/huffman-slides.pdf)
+[slides/huffman-slides.pptx](slides/huffman-slides.pptx) (opens in PowerPoint or Google Slides; speaker notes included)
 
 ## How I learned this
 
