@@ -1,22 +1,21 @@
 /*
- * huffman.c
+ * huffman.c - huffman coding for my comp 211 checkoff
  *
- * Huffman coding compressor / decompressor for my COMP 211 checkoff.
+ * ./huffman stats <file>            prints counts, codes, sizes
+ * ./huffman compress <in> <out>
+ * ./huffman decompress <in> <out>
  *
- *   ./huffman stats <file>             show frequencies, codes and sizes
- *   ./huffman compress <in> <out>      compress a file
- *   ./huffman decompress <in> <out>    decompress a file
+ * file format i made up:
+ *   "HUF1" (4 bytes)
+ *   original size (8 bytes)
+ *   how many different symbols, n (2 bytes)
+ *   then n times: symbol (1 byte) + its count (4 bytes)
+ *   then the actual bits, last byte padded with 0s
+ * all the numbers are little endian
  *
- * Compressed file format (integers are little-endian):
- *   4 bytes    "HUF1"
- *   8 bytes    size of the original file in bytes
- *   2 bytes    number of distinct symbols (n)
- *   n * 5      symbol (1 byte) + its count (4 bytes)
- *   the rest   encoded bits, 8 per byte, last byte padded with 0s
- *
- * The decompressor rebuilds the same tree from the counts, so the tree
- * itself is never written to the file. Because the original size is in the
- * header, the decompressor knows when to stop and never decodes the padding.
+ * decompress just rebuilds the same tree from the counts so i dont have to
+ * save the tree. and since the original size is saved it knows when to stop
+ * so the padding bits dont turn into extra letters
  */
 
 #include <math.h>
@@ -25,20 +24,18 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NUM_SYMBOLS 256   /* a byte can be 0..255 */
-#define MAX_CODE 256      /* longest possible code is 255 bits, +1 for '\0' */
+#define NUM_SYMBOLS 256   // byte = 0 to 255
+#define MAX_CODE 256      // codes cant be longer than 255 bits (+1 for the \0)
 
 typedef struct Node {
-    int symbol;          /* 0..255 for a leaf, -1 for an internal node */
+    int symbol;          // 0-255 if its a leaf, -1 if not
     uint32_t freq;
-    int order;           /* tie breaker so compress and decompress build the same tree */
-    struct Node *left;   /* 0 branch */
-    struct Node *right;  /* 1 branch */
+    int order;           // tie breaker, so compress + decompress make the same tree
+    struct Node *left;   // 0
+    struct Node *right;  // 1
 } Node;
 
-/* ---------------------------------------------------------------------- */
-/* tree nodes                                                             */
-/* ---------------------------------------------------------------------- */
+// ---- tree ----
 
 static Node *new_node(int symbol, uint32_t freq, int order, Node *left, Node *right)
 {
@@ -55,7 +52,7 @@ static Node *new_node(int symbol, uint32_t freq, int order, Node *left, Node *ri
     return n;
 }
 
-/* children first, then the parent (post-order) */
+// free kids first then the parent
 static void free_tree(Node *n)
 {
     if (n == NULL)
@@ -65,9 +62,7 @@ static void free_tree(Node *n)
     free(n);
 }
 
-/* ---------------------------------------------------------------------- */
-/* min-heap of Node pointers (smallest freq on top)                       */
-/* ---------------------------------------------------------------------- */
+// ---- min heap (smallest count on top) ----
 
 typedef struct {
     Node *items[NUM_SYMBOLS];
@@ -123,9 +118,7 @@ static Node *heap_pop(MinHeap *h)
     return top;
 }
 
-/* ---------------------------------------------------------------------- */
-/* building the tree and the code table                                   */
-/* ---------------------------------------------------------------------- */
+// ---- building the tree + codes ----
 
 static Node *build_tree(const uint32_t freq[NUM_SYMBOLS])
 {
@@ -136,17 +129,17 @@ static Node *build_tree(const uint32_t freq[NUM_SYMBOLS])
             heap_push(&heap, new_node(s, freq[s], s, NULL, NULL));
     }
 
-    if (heap.size == 0)          /* empty file */
+    if (heap.size == 0)          // empty file
         return NULL;
 
     if (heap.size == 1) {
-        /* Only one kind of symbol (like "AAAA"). A lone leaf would have an
-         * empty code, so hang it off a parent and give it the code "0". */
+        // only one kind of letter (like "AAAA"). a leaf by itself would get
+        // an empty code so i stick it under a parent so it gets "0"
         Node *only = heap_pop(&heap);
         return new_node(-1, only->freq, NUM_SYMBOLS, only, NULL);
     }
 
-    /* the actual Huffman algorithm: merge the two smallest until one is left */
+    // this is the actual algorithm. merge 2 smallest until theres 1 left
     int next_order = NUM_SYMBOLS;
     while (heap.size > 1) {
         Node *a = heap_pop(&heap);
@@ -156,7 +149,7 @@ static Node *build_tree(const uint32_t freq[NUM_SYMBOLS])
     return heap_pop(&heap);
 }
 
-/* walk the tree; going left adds '0', going right adds '1' */
+// walk the tree, left adds a 0 and right adds a 1
 static void build_codes(const Node *n, char *path, int depth, char codes[][MAX_CODE])
 {
     if (n == NULL)
@@ -172,9 +165,7 @@ static void build_codes(const Node *n, char *path, int depth, char codes[][MAX_C
     build_codes(n->right, path, depth + 1, codes);
 }
 
-/* ---------------------------------------------------------------------- */
-/* file helpers                                                           */
-/* ---------------------------------------------------------------------- */
+// ---- file stuff ----
 
 static unsigned char *read_file(const char *path, size_t *size_out)
 {
@@ -206,7 +197,7 @@ static void count_freqs(const unsigned char *data, size_t size, uint32_t freq[NU
         freq[data[i]]++;
 }
 
-/* write the low nbytes of value, lowest byte first */
+// writes value one byte at a time, lowest byte first
 static void write_le(FILE *f, uint64_t value, int nbytes)
 {
     for (int i = 0; i < nbytes; i++)
@@ -226,14 +217,12 @@ static int read_le(FILE *f, int nbytes, uint64_t *out)
     return 1;
 }
 
-/* ---------------------------------------------------------------------- */
-/* writing and reading single bits                                        */
-/* ---------------------------------------------------------------------- */
+// ---- reading/writing 1 bit at a time ----
 
 typedef struct {
     FILE *f;
-    unsigned char byte;  /* bits collected so far */
-    int count;           /* how many bits are in byte */
+    unsigned char byte;  // bits so far
+    int count;           // how many are in byte
 } BitWriter;
 
 static void put_bit(BitWriter *w, int bit)
@@ -247,7 +236,7 @@ static void put_bit(BitWriter *w, int bit)
     }
 }
 
-/* pad the last partial byte with zeros on the right */
+// last byte might not be full, pad it with 0s
 static void flush_bits(BitWriter *w)
 {
     if (w->count > 0) {
@@ -261,10 +250,10 @@ static void flush_bits(BitWriter *w)
 typedef struct {
     FILE *f;
     int byte;
-    int left;  /* bits not yet used in byte */
+    int left;  // bits left in byte
 } BitReader;
 
-/* returns 0 or 1, or -1 if the file ran out */
+// gives 0 or 1, or -1 if theres nothing left
 static int get_bit(BitReader *r)
 {
     if (r->left == 0) {
@@ -277,9 +266,7 @@ static int get_bit(BitReader *r)
     return (r->byte >> r->left) & 1;
 }
 
-/* ---------------------------------------------------------------------- */
-/* commands                                                               */
-/* ---------------------------------------------------------------------- */
+// ---- the 3 commands ----
 
 static int compress_file(const char *in_path, const char *out_path)
 {
@@ -305,7 +292,7 @@ static int compress_file(const char *in_path, const char *out_path)
         return 1;
     }
 
-    /* header */
+    // header
     fwrite("HUF1", 1, 4, out);
     write_le(out, size, 8);
     int distinct = 0;
@@ -320,7 +307,7 @@ static int compress_file(const char *in_path, const char *out_path)
         }
     }
 
-    /* body: swap every byte for its code */
+    // swap every byte for its code
     BitWriter w = { out, 0, 0 };
     for (size_t i = 0; i < size; i++) {
         for (const char *c = codes[data[i]]; *c != '\0'; c++)
@@ -370,7 +357,7 @@ static int decompress_file(const char *in_path, const char *out_path)
         freq[s] = (uint32_t)count;
     }
 
-    Node *root = build_tree(freq);   /* same counts -> same tree */
+    Node *root = build_tree(freq);   // same counts = same tree
 
     FILE *out = fopen(out_path, "wb");
     if (out == NULL) {
@@ -380,7 +367,7 @@ static int decompress_file(const char *in_path, const char *out_path)
         return 1;
     }
 
-    /* start at the root, follow bits until a leaf, print it, go back to the root */
+    // start at root, follow bits till a leaf, print it, back to root
     BitReader r = { in, 0, 0 };
     int status = 0;
     for (uint64_t i = 0; i < size && status == 0; i++) {
@@ -409,7 +396,7 @@ static int decompress_file(const char *in_path, const char *out_path)
     return status;
 }
 
-/* for sorting the stats table by count, biggest first */
+// for sorting the stats table, biggest count first
 static const uint32_t *sort_freq;
 
 static int by_count(const void *a, const void *b)
@@ -482,7 +469,7 @@ static int stats_file(const char *path)
     if (show < distinct)
         printf("... (%d more symbols)\n", distinct - show);
 
-    int fixed = 0;   /* smallest fixed-length code that can tell them apart */
+    int fixed = 0;   // bits needed if every code was the same length
     while ((1 << fixed) < distinct)
         fixed++;
     if (fixed == 0)

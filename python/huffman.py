@@ -1,7 +1,5 @@
-"""
-Short Python version of Huffman coding, used for the experiments.
-The C version in src/ is the "real" one; this one is easier to poke at.
-"""
+# python version of huffman, the C one is the real one
+# this one is just easier to mess around with
 
 import heapq
 import math
@@ -17,13 +15,10 @@ class Node:
 
 
 def build_tree(freqs, prefer_new_nodes=False):
-    """
-    freqs: dict symbol -> count
-
-    When two trees have the same count, heapq needs something else to compare.
-    By default older trees win ties. prefer_new_nodes=True flips that, which
-    builds a different (but still valid) Huffman tree.
-    """
+    # freqs = {symbol: count}
+    # when 2 counts tie heapq needs something else to compare so i use order.
+    # normally older trees win ties, prefer_new_nodes flips it which gives a
+    # different tree (still a valid huffman tree)
     heap = []
     order = 0
     for symbol in sorted(freqs):
@@ -32,7 +27,7 @@ def build_tree(freqs, prefer_new_nodes=False):
     heapq.heapify(heap)
 
     if len(heap) == 1:
-        # one distinct symbol: give it the code "0"
+        # only 1 kind of symbol, give it "0"
         _, _, only = heap[0]
         return Node(only.freq, left=only)
 
@@ -68,8 +63,8 @@ def encode(data, codes):
 
 
 def decode(bits, codes):
-    # flip the table around and read until the buffer matches a code.
-    # this only works because no code is a prefix of another one.
+    # flip the table and read bits until it matches a code
+    # only works because no code is the start of another one
     lookup = {code: sym for sym, code in codes.items()}
     out = []
     current = ""

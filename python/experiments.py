@@ -1,9 +1,5 @@
-"""
-Things I wanted to check for myself instead of just taking the AI's word for it.
-
-Run from the repo root:
-    python3 python/experiments.py
-"""
+# stuff i wanted to actually test instead of just believing what the AI said
+# run from the repo folder: python3 python/experiments.py
 
 import math
 import os
@@ -17,7 +13,7 @@ SAMPLE = os.path.join(HERE, "..", "examples", "sample.txt")
 
 
 def header_bytes(data):
-    # same header layout as the C version: 14 bytes + 5 per distinct symbol
+    # same as the C header, 14 bytes + 5 per symbol
     return 14 + 5 * len(set(data))
 
 
@@ -32,7 +28,7 @@ def title(s):
     print("-" * len(s))
 
 
-# 1. the running example
+# 1. abracadabra
 title("1. ABRACADABRA")
 word = "ABRACADABRA"
 codes = huffman_codes(word)
@@ -67,7 +63,7 @@ print(f"  huffman: {encoded_bits(skewed, c) / len(skewed):.3f} bits per symbol")
 print(f"  entropy: {entropy(skewed):.3f} bits per symbol")
 print("  huffman can't go below 1 bit per symbol, even when the data is very predictable")
 
-# 5. real text, and compared with zlib (DEFLATE = LZ77 + Huffman, what zip/gzip/png use)
+# 5. real text + compare to zlib (zlib = LZ77 + huffman, its what zip/gzip/png use)
 def compare(name, data):
     c = huffman_codes(data)
     huff = header_bytes(data) + (encoded_bits(data, c) + 7) // 8
