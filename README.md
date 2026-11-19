@@ -125,7 +125,7 @@ experiments.py is all the tests from the "interesting" section above
 
 ## how I learned it
 
-I used Claude (AI) to make a study guide and then put it in NotebookLM and listened to it like a podcast since I learn better listening than reading. then I made the code and used the experiments to actually check what it told me, thats how I found the bit flip thing. more in my reflection
+I used Gemini to make a study guide and then put it in NotebookLM and listened to it like a podcast since I learn better listening than reading. then I made the code and used the experiments to actually check what it told me, thats how I found the bit flip thing. more in my reflection
 
 ## stuff I still want to look at
 
@@ -141,7 +141,7 @@ I used Claude (AI) to make a study guide and then put it in NotebookLM and liste
 - RFC 7541 (HPACK) https://www.rfc-editor.org/rfc/rfc7541 - appendix B is the actual huffman table for http/2
 - CLRS Introduction to Algorithms 3rd ed, section 16.3 - proof that the greedy way is optimal
 - python heapq and zlib docs
-- Claude and NotebookLM (see reflection)
+- Gemini and NotebookLM (see reflection)
 
 slide images are all from wikimedia commons:
 - huffman tree for "to be or not to be" by huffman.ooz.ie, CC0 (I recolored it)
